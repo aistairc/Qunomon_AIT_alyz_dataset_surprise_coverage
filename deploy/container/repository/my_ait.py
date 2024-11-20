@@ -38,7 +38,7 @@
 
 # [uneditable]
 
-# In[1]:
+# In[ ]:
 
 
 # Determine whether to start AIT or jupyter by startup argument
@@ -94,6 +94,7 @@ if not is_ait_launch:
     requirements_generator.add_package('h5py','3.12.1')
     requirements_generator.add_package('torch','2.5.1')
     requirements_generator.add_package('torchvision','0.20.1')
+    requirements_generator.add_package('matplotlib','3.9.2')
     requirements_generator.add_package('scikit-learn','1.5.2')
 
 
@@ -562,11 +563,20 @@ def LSC_distributions_hist(values, n_buckets=10, percentile=95,file_path: str=No
     plt.show()
 
 
+# In[20]:
+
+
+@log(logger)
+@downloads(ait_output, path_helper, 'Log', 'ait.log')
+def move_log(file_path: str=None) -> str:
+    shutil.move(get_log_path(), file_path)
+
+
 # ### #9 Main Algorithms
 
 # [required]
 
-# In[20]:
+# In[21]:
 
 
 @log(logger)
@@ -619,6 +629,8 @@ def main() -> None:
     LSC_distributions_hist(lsa_scores)
     train_dataset.close()
     test_dataset.close()
+    
+    move_log()
     
 
 
