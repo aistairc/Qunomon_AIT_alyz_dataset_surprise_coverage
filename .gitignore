@@ -1,1 +1,3 @@
 tool/docker/jupyter/resolve-dependencies.sh
+/local_qai/inventory
+/local_qai/mnt
