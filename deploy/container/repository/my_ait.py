@@ -93,7 +93,6 @@ if not is_ait_launch:
     requirements_generator.add_package('numpy','1.26.4')
     requirements_generator.add_package('h5py','3.12.1')
     requirements_generator.add_package('torch','2.5.1')
-    requirements_generator.add_package('torchvision','0.20.1')
     requirements_generator.add_package('matplotlib','3.9.2')
     requirements_generator.add_package('scikit-learn','1.5.2')
 
@@ -124,10 +123,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.neighbors import KernelDensity
 import h5py
-import json
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 
 
@@ -179,15 +176,10 @@ if not is_ait_launch:
                                              description='HDF5形式のテスト用データセット。内部は2つのHDF5ファイルを用意する(ファイル名は任意)\n(1)モデルに入力される多次元配列を含むデータセット(データセット(1)の要素数はtrained_modelの入力層の要素数と一致)\n(2)データの各サンプルの正解ラベルを含むデータセット(データセット(2)の要素数はtrained_modelの出力層の要素数と一致))\n\nファイル構造:\n sample.h5\n   ├── (1) テスト用入力データセット\n   └── (2) テスト用ラベルデータセット\n', 
                                              requirement= inventory_requirement_dataset)
     inventory_requirement_trained_model = manifest_genenerator.format_ait_inventory_requirement(format_=['pth'])
-    inventory_requirement_trained_model_architecture = manifest_genenerator.format_ait_inventory_requirement(format_=['json'])
     manifest_genenerator.add_ait_inventories(name='trained_model', 
                                               type_='model', 
-                                              description='Pytorchでモデルの状態辞書が保存されたデータ。モデルの構造は含まれていない。', 
+                                              description='torch.jit.save関数を使用しTorchScript形式で保存されたモデルデータ。入力と出力の要素数はtest_dataset inventoryと一致させる', 
                                               requirement=inventory_requirement_trained_model)
-    manifest_genenerator.add_ait_inventories(name='trained_model_architecture', 
-                                              type_='model', 
-                                              description='json形式で記述されたモデルのアーキテクチャ情報（層の種類、接続、パラメータなど）。入力と出力の要素数はtrain_dataset inventoryとtest_dataset inventoryと一致させる', 
-                                              requirement=inventory_requirement_trained_model_architecture)
     #### Parameters
     manifest_genenerator.add_ait_parameters(name='train_input_dataset_name', 
                                             type_='str', 
@@ -258,9 +250,7 @@ if not is_ait_launch:
     input_generator.add_ait_inventories(name='test_dataset',
                                         value='mnist_data/aug_test.h5')
     input_generator.add_ait_inventories(name='trained_model',
-                                        value='dict_models/LeNet5_model.pth')
-    input_generator.add_ait_inventories(name='trained_model_architecture',
-                                        value='dict_models/model_achitecture.json')
+                                        value='models/LeNet5_model.pth')
     input_generator.set_ait_params("train_input_dataset_name", "train_image")
     input_generator.set_ait_params("train_label_dataset_name", "train_label")
     input_generator.set_ait_params("test_input_dataset_name", "test_image")
@@ -308,54 +298,18 @@ ait_manifest.read_json(path_helper.get_manifest_file_path())
 @log(logger)
 def get_layer_name(model):
     layer_name = None
-    for name , module in model.named_modules():
-        if isinstance(module,nn.Conv2d):
+
+    for name ,layer in model.named_children():
+        if hasattr(layer,"original_name") and layer.original_name =="Conv2d":
             layer_name = name
-            
+
     if layer_name is None:
-        raise ValueError("Conv2d layer is None.")
+        raise ValueError("Conv2d does not exist.")
+
     return layer_name
 
 
 # In[12]:
-
-
-
-@log(logger)
-def build_model(json_file):
-    with open(json_file,'r') as f:
-        config = json.load(f)
-
-    class DynamicModel(nn.Module):
-        def __init__(self):
-            super(DynamicModel,self).__init__()
-            
-            for layer in config['layers']:
-                layer_name = layer['name']
-                layer_type = layer['type']
-                params = layer['params']
-                setattr(self,layer_name,getattr(nn, layer_type)(**params))
-
-        def forward(self,x):
-            for layer in config['layers']:
-                layer_name = layer['name']
-                layer_type = layer['type']
-                if "Dropout" in layer_type:
-                    x = getattr(self,layer_name)(x)
-                elif "Linear" in layer_type:
-                    if len(x.shape)>2:
-                        x = x.view(x.size(0),64)
-                    x = getattr(self, layer_name)(x)
-
-                else:
-                    x= torch.relu(getattr(self, layer_name)(x))
-
-            return x
-        
-    return DynamicModel()
-
-
-# In[13]:
 
 
 #@log(logger)
@@ -411,36 +365,56 @@ class SC_Analyzer:
         return LSC_value
 
 
+# In[13]:
+
+
+#@log(logger)
+class Activation_Tracker:
+    def __init__(self,model,layer_name):
+        self.model=model
+        self.layer_name= layer_name
+        self.activations =None
+    def forward_tracking(self,x):
+        self.activations =None
+        for name,module in self.model.named_children():
+            x= module(x)
+            if name ==  self.layer_name:
+                self.activations = x.clone().detach()
+                break
+        return x
+
+
+    def get_activations(self):
+        if self.activations is None:
+            raise RuntimeError("no activation recorded")
+        return self.activations
+
+
 # In[14]:
 
 
 @log(logger)
-def get_activation_trace(model, data_loader, layer_name, channels):
-    activations, labels = [],[]
-    activation_outputs={}
-    
-    def hook_fn(module,input,output):
-        activation_outputs[layer_name] = output.detach()
-    
-    for name, layer in model.named_modules():
-        if name == layer_name:
-            layer.register_forward_hook(hook_fn)
-            break
-    with torch.no_grad():
-        for images ,labels_batch in data_loader:
-            if channels ==3 and images.shape[1]==1:
-                images = images.repeat(1,3,1,1)
+def get_activation_trace( data_loader,tracker, channels):
+    activations, labels, indices = [],[],[]
+    idx = 0
 
-            _ = model(images)
-            batch_activations = activation_outputs[layer_name].cpu().numpy().reshape(images.size(0),-1)
 
-            activations.append(batch_activations)
-            labels.append(labels_batch)
-            
+    for images ,labels_batch in data_loader:
+        batch_size = images.size(0)
+        if channels ==3 and images.shape[1]==1:
+            images = images.repeat(1,3,1,1)
+
+        _ = tracker.forward_tracking(images)
+
+        activations.append(tracker.get_activations().cpu().numpy().reshape(batch_size,-1))
+        labels.append(labels_batch.numpy())
+        indices.extend(range(idx,idx+batch_size))
+        
+        idx += batch_size
     activations = np.concatenate(activations,axis=0)
     labels = np.concatenate(labels,axis=0)
     
-    return activations, labels
+    return activations, labels, indices
 
 
 # In[15]:
@@ -473,22 +447,31 @@ class h5_dataset(Dataset):
 
 
 @log(logger)
-@resources(ait_output, path_helper, 'DSC_distribution_table',"SC_distribution_table.csv")
-def DSC_distributions_table(values, n_buckets=20, percentile=90,file_path: str=None):
+@resources(ait_output, path_helper, 'DSC_distribution_table',"DSC_distribution_table.csv")
+def DSC_distributions_table(values, indices,n_buckets=20, percentile=90,file_path: str=None):
     U = np.percentile(values, percentile)
     bucket_range = [(U*(i/n_buckets), U*((i+1)/n_buckets)) for i in range(n_buckets)]
-    covered_buckets = 0
-
-    covered_buckets = [np.sum((values > lower) & (values <= upper)) for lower, upper in bucket_range]
+    bucket_indices = []
+    bucket_counts = []
+    
+    for lower, upper in bucket_range:
+        bucket_mask = (values > lower) & (values <= upper)
+        bucket_counts.append(np.sum(bucket_mask))
+        bucket_indices.append(list(np.array(indices)[bucket_mask]))
+    
     bucket_labels = [f"b{i+1}" for i in range(n_buckets)]
+    
+    
+    
     dsc_df= pd.DataFrame({
         "Bucket":  bucket_labels,
         "Range":[f"{lower:.2f} - {upper:.2f}" for lower, upper in bucket_range],
-        "Count":covered_buckets
+        "Count":bucket_counts,
+        "Indices": bucket_indices
         })
     print("\nDistance-based Surprise Coverage Distribution(Table):")
     print(dsc_df)
-    dsc_df.to_csv(file_path)
+    dsc_df.to_csv(file_path,index=False)
     return dsc_df
 
 
@@ -496,22 +479,31 @@ def DSC_distributions_table(values, n_buckets=20, percentile=90,file_path: str=N
 
 
 @log(logger)
-@resources(ait_output, path_helper, 'LSC_distribution_table',"LC_distribution_table.csv")
-def LSC_distributions_table(values, n_buckets=10, percentile=90,file_path: str=None):
+@resources(ait_output, path_helper, 'LSC_distribution_table',"LSC_distribution_table.csv")
+def LSC_distributions_table(values, indices, n_buckets=10, percentile=90,file_path: str=None):
     U = np.percentile(values, percentile)
     bucket_range = [(U*(i/n_buckets), U*((i+1)/n_buckets)) for i in range(n_buckets)]
-    covered_buckets = 0
-
-    covered_buckets = [np.sum((values > lower) & (values <= upper)) for lower, upper in bucket_range]
+    bucket_indices = []
+    bucket_counts = []
+    
+    for lower, upper in bucket_range:
+        bucket_mask = (values > lower) & (values <= upper)
+        bucket_counts.append(np.sum(bucket_mask))
+        bucket_indices.append(list(np.array(indices)[bucket_mask]))
+    
     bucket_labels = [f"b{i+1}" for i in range(n_buckets)]
+    
+    
+    
     lsc_df= pd.DataFrame({
         "Bucket":  bucket_labels,
         "Range":[f"{lower:.2f} - {upper:.2f}" for lower, upper in bucket_range],
-        "Count":covered_buckets
+        "Count":bucket_counts,
+        "Indices": bucket_indices
         })
     print("\nLikelihood-based Surprise Coverage Distribution(Table):")
     print(lsc_df)
-    lsc_df.to_csv(file_path)
+    lsc_df.to_csv(file_path,index=False)
     return lsc_df
 
 
@@ -596,19 +588,18 @@ def main() -> None:
     train_loader = DataLoader(train_dataset, batch_size = 64, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size = 64, shuffle=False)
     
-    state_dict_file = ait_input.get_inventory_path('trained_model')
-    json_file = ait_input.get_inventory_path('trained_model_architecture')
-    state_dict = torch.load(state_dict_file)
+    trained_model = ait_input.get_inventory_path('trained_model')
     try:
-        model = build_model(json_file)
-        model.load_state_dict(state_dict)
+        model = torch.jit.load(trained_model)
     except Exception as e:
         print(e)
     model.eval()
     layer_name = get_layer_name(model)
     
-    train_activations, train_labels = get_activation_trace(model,train_loader,layer_name,channels)
-    test_activations, test_labels = get_activation_trace(model,test_loader,layer_name,channels)
+    tracker = Activation_Tracker(model,layer_name)
+    
+    train_activations, train_labels,train_indices = get_activation_trace(train_loader,tracker,channels)
+    test_activations, test_labels ,test_indices= get_activation_trace(test_loader,tracker,channels)
     
     
     analyzer = SC_Analyzer(model)
@@ -623,9 +614,9 @@ def main() -> None:
     print("DSC: ",dsa_sc)
     print("LSC: ",lsa_sc)
     
-    dsc_table = DSC_distributions_table(dsa_scores)
+    dsc_table = DSC_distributions_table(dsa_scores,test_indices)
     DSC_distributions_hist(dsa_scores)
-    lsc_table = LSC_distributions_table(lsa_scores)
+    lsc_table = LSC_distributions_table(lsa_scores,test_indices)
     LSC_distributions_hist(lsa_scores)
     train_dataset.close()
     test_dataset.close()

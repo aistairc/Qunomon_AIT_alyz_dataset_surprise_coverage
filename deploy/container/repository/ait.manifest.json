@@ -38,20 +38,10 @@
     {
       "name": "trained_model",
       "type": "model",
-      "description": "Pytorchでモデルの状態辞書が保存されたデータ。モデルの構造は含まれていない。",
+      "description": "torch.jit.save関数を使用しTorchScript形式で保存されたモデルデータ。入力と出力の要素数はtest_dataset inventoryと一致させる",
       "requirement": {
         "format": [
           "pth"
-        ]
-      }
-    },
-    {
-      "name": "trained_model_architecture",
-      "type": "model",
-      "description": "json形式で記述されたモデルのアーキテクチャ情報（層の種類、接続、パラメータなど）。入力と出力の要素数はtrain_dataset inventoryとtest_dataset inventoryと一致させる",
-      "requirement": {
-        "format": [
-          "json"
         ]
       }
     }
