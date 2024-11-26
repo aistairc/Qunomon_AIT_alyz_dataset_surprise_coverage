@@ -38,7 +38,7 @@
 
 # [uneditable]
 
-# In[ ]:
+# In[1]:
 
 
 # Determine whether to start AIT or jupyter by startup argument
@@ -169,11 +169,11 @@ if not is_ait_launch:
     inventory_requirement_dataset = manifest_genenerator.format_ait_inventory_requirement(format_=['h5'])
     manifest_genenerator.add_ait_inventories(name='train_dataset', 
                                              type_='dataset', 
-                                             description='HDF5形式の学習用データセット。内部は2つのHDF5ファイルを用意する(ファイル名は任意)\n(1)モデルに入力される多次元配列を含むデータセット(データセット(1)の要素数はtrained_modelの入力層の要素数と一致)\n(2)データの各サンプルの正解ラベルを含むデータセット(データセット(2)の要素数はtrained_modelの出力層の要素数と一致))\n\nファイル構造:\n sample.h5\n   ├── (1) 学習用入力データセット\n   └── (2) 学習用ラベルデータセット\n', 
+                                             description='HDF5形式の学習用データセット。内部は2つのHDF5ファイルを用意する(ファイル名は任意)\n(1)モデルに入力される多次元配列を含むデータセット(データセット(1)の要素数はtrained_modelの入力層の要素数と一致)\n(2)データの各サンプルの正解ラベル（クラスインデックス）を含むデータセット(データセット(2)の要素数はtrained_modelの出力層の要素数と一致))\n\nファイル構造:\n sample.h5\n   ├── (1) 学習用入力データセット\n   └── (2) 学習用ラベルデータセット\n', 
                                              requirement= inventory_requirement_dataset)
     manifest_genenerator.add_ait_inventories(name='test_dataset', 
                                              type_='dataset', 
-                                             description='HDF5形式のテスト用データセット。内部は2つのHDF5ファイルを用意する(ファイル名は任意)\n(1)モデルに入力される多次元配列を含むデータセット(データセット(1)の要素数はtrained_modelの入力層の要素数と一致)\n(2)データの各サンプルの正解ラベルを含むデータセット(データセット(2)の要素数はtrained_modelの出力層の要素数と一致))\n\nファイル構造:\n sample.h5\n   ├── (1) テスト用入力データセット\n   └── (2) テスト用ラベルデータセット\n', 
+                                             description='HDF5形式のテスト用データセット。内部は2つのHDF5ファイルを用意する(ファイル名は任意)\n(1)モデルに入力される多次元配列を含むデータセット(データセット(1)の要素数はtrained_modelの入力層の要素数と一致)\n(2)データの各サンプルの正解ラベル（クラスインデックス）を含むデータセット(データセット(2)の要素数はtrained_modelの出力層の要素数と一致))\n\nファイル構造:\n sample.h5\n   ├── (1) テスト用入力データセット\n   └── (2) テスト用ラベルデータセット\n', 
                                              requirement= inventory_requirement_dataset)
     inventory_requirement_trained_model = manifest_genenerator.format_ait_inventory_requirement(format_=['pth'])
     manifest_genenerator.add_ait_inventories(name='trained_model', 
@@ -183,19 +183,19 @@ if not is_ait_launch:
     #### Parameters
     manifest_genenerator.add_ait_parameters(name='train_input_dataset_name', 
                                             type_='str', 
-                                            description='train_dataset inventoryで説明されているデータセット(1)のファイル名', 
+                                            description='train_dataset inventoryで説明されているデータセット(1)の名前', 
                                             default_val='x_train')
     manifest_genenerator.add_ait_parameters(name='train_label_dataset_name', 
                                             type_='str', 
-                                            description='train_dataset inventoryで説明されているデータセット(2)のファイル名', 
+                                            description='train_dataset inventoryで説明されているデータセット(2)の名前', 
                                             default_val='y_train')
     manifest_genenerator.add_ait_parameters(name='test_input_dataset_name', 
                                             type_='str', 
-                                            description='test_dataset inventoryで説明されているデータセット(1)のファイル名', 
+                                            description='test_dataset inventoryで説明されているデータセット(1)の名前', 
                                             default_val='x_test')
     manifest_genenerator.add_ait_parameters(name='test_label_dataset_name', 
                                             type_='str', 
-                                            description='test_dataset inventoryで説明されているデータセット(2)のファイル名', 
+                                            description='test_dataset inventoryで説明されているデータセット(2)の名前', 
                                             default_val='y_test')
     manifest_genenerator.add_ait_parameters(name='kde_bandwidth',
                                             type_='float',
