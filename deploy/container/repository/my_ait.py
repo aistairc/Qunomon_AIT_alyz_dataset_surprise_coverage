@@ -99,7 +99,7 @@ if not is_ait_launch:
 
 # #### #3-3 [uneditable]
 
-# In[5]:
+# In[ ]:
 
 
 if not is_ait_launch:
@@ -113,7 +113,7 @@ if not is_ait_launch:
 
 # #### #4-1 [required]
 
-# In[6]:
+# In[ ]:
 
 
 # import if you need modules cell
@@ -130,7 +130,7 @@ from torch.utils.data import Dataset, DataLoader
 
 # #### #4-2 [uneditable]
 
-# In[7]:
+# In[ ]:
 
 
 # must use modules
@@ -149,7 +149,7 @@ from ait_sdk.develop.annotation import measures, resources, downloads, ait_main 
 
 # [required]
 
-# In[8]:
+# In[ ]:
 
 
 if not is_ait_launch:
@@ -169,11 +169,11 @@ if not is_ait_launch:
     inventory_requirement_dataset = manifest_genenerator.format_ait_inventory_requirement(format_=['h5'])
     manifest_genenerator.add_ait_inventories(name='train_dataset', 
                                              type_='dataset', 
-                                             description='HDF5形式の学習用データセット。内部は2つのHDF5ファイルを用意する(ファイル名は任意)\n(1)モデルに入力される多次元配列を含むデータセット(データセット(1)の要素数はtrained_modelの入力層の要素数と一致)\n(2)データの各サンプルの正解ラベル（クラスインデックス）を含むデータセット(データセット(2)の要素数はtrained_modelの出力層の要素数と一致))\n\nファイル構造:\n sample.h5\n   ├── (1) 学習用入力データセット\n   └── (2) 学習用ラベルデータセット\n', 
+                                             description='HDF5形式の学習用データセット。内部は2つのHDF5ファイルを用意する(ファイル名は任意)\n(1)モデルに入力される多次元配列を含むデータセット(データセット(1)の要素数はtrained_modelの入力層の要素数と一致)\n(2)データの各サンプルの正解ラベル（クラスのインデックス値）を含むデータセット(データセット(2)の要素数はtrained_modelの出力層の要素数と一致))\n\nファイル構造:\n sample.h5\n   ├── (1) 学習用入力データセット\n   └── (2) 学習用ラベルデータセット\n', 
                                              requirement= inventory_requirement_dataset)
     manifest_genenerator.add_ait_inventories(name='test_dataset', 
                                              type_='dataset', 
-                                             description='HDF5形式のテスト用データセット。内部は2つのHDF5ファイルを用意する(ファイル名は任意)\n(1)モデルに入力される多次元配列を含むデータセット(データセット(1)の要素数はtrained_modelの入力層の要素数と一致)\n(2)データの各サンプルの正解ラベル（クラスインデックス）を含むデータセット(データセット(2)の要素数はtrained_modelの出力層の要素数と一致))\n\nファイル構造:\n sample.h5\n   ├── (1) テスト用入力データセット\n   └── (2) テスト用ラベルデータセット\n', 
+                                             description='HDF5形式のテスト用データセット。内部は2つのHDF5ファイルを用意する(ファイル名は任意)\n(1)モデルに入力される多次元配列を含むデータセット(データセット(1)の要素数はtrained_modelの入力層の要素数と一致)\n(2)データの各サンプルの正解ラベル（クラスのインデックス値）を含むデータセット(データセット(2)の要素数はtrained_modelの出力層の要素数と一致))\n\nファイル構造:\n sample.h5\n   ├── (1) テスト用入力データセット\n   └── (2) テスト用ラベルデータセット\n', 
                                              requirement= inventory_requirement_dataset)
     inventory_requirement_trained_model = manifest_genenerator.format_ait_inventory_requirement(format_=['pth'])
     manifest_genenerator.add_ait_inventories(name='trained_model', 
@@ -239,7 +239,7 @@ if not is_ait_launch:
 
 # [required]
 
-# In[9]:
+# In[ ]:
 
 
 if not is_ait_launch:
@@ -262,7 +262,7 @@ if not is_ait_launch:
 
 # [uneditable]
 
-# In[10]:
+# In[ ]:
 
 
 logger = get_logger()
@@ -292,7 +292,7 @@ ait_manifest.read_json(path_helper.get_manifest_file_path())
 
 # [required]
 
-# In[11]:
+# In[ ]:
 
 
 @log(logger)
@@ -309,7 +309,7 @@ def get_layer_name(model):
     return layer_name
 
 
-# In[12]:
+# In[ ]:
 
 
 #@log(logger)
@@ -365,7 +365,7 @@ class SC_Analyzer:
         return LSC_value
 
 
-# In[13]:
+# In[ ]:
 
 
 #@log(logger)
@@ -390,7 +390,7 @@ class Activation_Tracker:
         return self.activations
 
 
-# In[14]:
+# In[ ]:
 
 
 @log(logger)
@@ -417,7 +417,7 @@ def get_activation_trace( data_loader,tracker, channels):
     return activations, labels, indices
 
 
-# In[15]:
+# In[ ]:
 
 
 #@log(logger)
@@ -443,7 +443,7 @@ class h5_dataset(Dataset):
         self.h5_file.close()
 
 
-# In[16]:
+# In[ ]:
 
 
 @log(logger)
@@ -475,7 +475,7 @@ def DSC_distributions_table(values, indices,n_buckets=20, percentile=90,file_pat
     return dsc_df
 
 
-# In[17]:
+# In[ ]:
 
 
 @log(logger)
@@ -507,7 +507,7 @@ def LSC_distributions_table(values, indices, n_buckets=10, percentile=90,file_pa
     return lsc_df
 
 
-# In[18]:
+# In[ ]:
 
 
 @log(logger)
@@ -531,7 +531,7 @@ def DSC_distributions_hist(values, n_buckets=20, percentile=90,file_path: str=No
     plt.show()
 
 
-# In[19]:
+# In[ ]:
 
 
 @log(logger)
@@ -555,7 +555,7 @@ def LSC_distributions_hist(values, n_buckets=10, percentile=95,file_path: str=No
     plt.show()
 
 
-# In[20]:
+# In[ ]:
 
 
 @log(logger)
@@ -568,7 +568,7 @@ def move_log(file_path: str=None) -> str:
 
 # [required]
 
-# In[21]:
+# In[ ]:
 
 
 @log(logger)
