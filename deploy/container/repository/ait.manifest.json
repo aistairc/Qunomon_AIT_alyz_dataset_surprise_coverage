@@ -18,7 +18,7 @@
     {
       "name": "train_dataset",
       "type": "dataset",
-      "description": "HDF5形式の学習用データセット。内部は2つのHDF5ファイルを用意する(ファイル名は任意)\n(1)モデルに入力される多次元配列を含むデータセット(データセット(1)の要素数はtrained_modelの入力層の要素数と一致)\n(2)データの各サンプルの正解ラベルを含むデータセット(データセット(2)の要素数はtrained_modelの出力層の要素数と一致))\n\nファイル構造:\n sample.h5\n   ├── (1) 学習用入力データセット\n   └── (2) 学習用ラベルデータセット\n",
+      "description": "HDF5形式の学習用データセット。内部は2つのHDF5ファイルを用意する(ファイル名は任意)\n(1)モデルに入力される多次元配列を含むデータセット(データセット(1)の要素数はtrained_modelの入力層の要素数と一致)\n(2)データの各サンプルの正解ラベル（クラスのインデックス値）を含むデータセット(データセット(2)の要素数はtrained_modelの出力層の要素数と一致))\n\nファイル構造:\n sample.h5\n   ├── (1) 学習用入力データセット\n   └── (2) 学習用ラベルデータセット\n",
       "requirement": {
         "format": [
           "h5"
@@ -28,7 +28,7 @@
     {
       "name": "test_dataset",
       "type": "dataset",
-      "description": "HDF5形式のテスト用データセット。内部は2つのHDF5ファイルを用意する(ファイル名は任意)\n(1)モデルに入力される多次元配列を含むデータセット(データセット(1)の要素数はtrained_modelの入力層の要素数と一致)\n(2)データの各サンプルの正解ラベルを含むデータセット(データセット(2)の要素数はtrained_modelの出力層の要素数と一致))\n\nファイル構造:\n sample.h5\n   ├── (1) テスト用入力データセット\n   └── (2) テスト用ラベルデータセット\n",
+      "description": "HDF5形式のテスト用データセット。内部は2つのHDF5ファイルを用意する(ファイル名は任意)\n(1)モデルに入力される多次元配列を含むデータセット(データセット(1)の要素数はtrained_modelの入力層の要素数と一致)\n(2)データの各サンプルの正解ラベル（クラスのインデックス値）を含むデータセット(データセット(2)の要素数はtrained_modelの出力層の要素数と一致))\n\nファイル構造:\n sample.h5\n   ├── (1) テスト用入力データセット\n   └── (2) テスト用ラベルデータセット\n",
       "requirement": {
         "format": [
           "h5"
@@ -38,20 +38,10 @@
     {
       "name": "trained_model",
       "type": "model",
-      "description": "Pytorchでモデルの状態辞書が保存されたデータ。モデルの構造は含まれていない。",
+      "description": "torch.jit.save関数を使用しTorchScript形式で保存されたモデルデータ。入力と出力の要素数はtest_dataset inventoryと一致させる",
       "requirement": {
         "format": [
           "pth"
-        ]
-      }
-    },
-    {
-      "name": "trained_model_architecture",
-      "type": "model",
-      "description": "json形式で記述されたモデルのアーキテクチャ情報（層の種類、接続、パラメータなど）。入力と出力の要素数はtrain_dataset inventoryとtest_dataset inventoryと一致させる",
-      "requirement": {
-        "format": [
-          "json"
         ]
       }
     }
@@ -60,25 +50,25 @@
     {
       "name": "train_input_dataset_name",
       "type": "str",
-      "description": "train_dataset inventoryで説明されているデータセット(1)のファイル名",
+      "description": "train_dataset inventoryで説明されているデータセット(1)の名前",
       "default_val": "x_train"
     },
     {
       "name": "train_label_dataset_name",
       "type": "str",
-      "description": "train_dataset inventoryで説明されているデータセット(2)のファイル名",
+      "description": "train_dataset inventoryで説明されているデータセット(2)の名前",
       "default_val": "y_train"
     },
     {
       "name": "test_input_dataset_name",
       "type": "str",
-      "description": "test_dataset inventoryで説明されているデータセット(1)のファイル名",
+      "description": "test_dataset inventoryで説明されているデータセット(1)の名前",
       "default_val": "x_test"
     },
     {
       "name": "test_label_dataset_name",
       "type": "str",
-      "description": "test_dataset inventoryで説明されているデータセット(2)のファイル名",
+      "description": "test_dataset inventoryで説明されているデータセット(2)の名前",
       "default_val": "y_test"
     },
     {
