@@ -2,7 +2,7 @@
   "name": "alyz_dataset_surprise_coverage",
   "description": "モデルがテストデータに対して意外性のある入力をどれだけカバーしているかを測定することでデータセットの多様性を評価する。\nこれにより、データセットが異なる特徴を豊富に含んでいるかを把握することができる。分布に基づいた評価と空間的な距離に基づいた評価の2つの観点からデータセットの多様性を評価することでより安定した評価ができる。",
   "source_repository": "https://github.com/aistairc/Qunomon_AIT_alyz_dataset_surprise_coverage",
-  "version": "1.0",
+  "version": "1.1",
   "quality": "https://ait-hub.pj.aist.go.jp/ait-hub/api/0.0.1/qualityDimensions/機械学習品質マネジメントガイドライン第三版/B-1データセットの被覆性",
   "keywords": [
     "Surprise Coverage",
